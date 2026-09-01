@@ -65,5 +65,4 @@ async def websocket_alerts(websocket: WebSocket):
     except WebSocketDisconnect:
         print("Client disconnected from alerts WebSocket.")
 
-app.mount('/', StaticFiles(directory='../frontend/dist', html=True), name='static')
-
+app.mount("/", StaticFiles(directory="../frontend/dist", html=True), name="static")
