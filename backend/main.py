@@ -4,6 +4,7 @@ import time
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from engine import SurveillanceEngine
 
 app = FastAPI(title="IBVAP API")
@@ -64,5 +65,5 @@ async def websocket_alerts(websocket: WebSocket):
     except WebSocketDisconnect:
         print("Client disconnected from alerts WebSocket.")
 
-from fastapi.staticfiles import StaticFiles
 app.mount('/', StaticFiles(directory='../frontend/dist', html=True), name='static')
+
