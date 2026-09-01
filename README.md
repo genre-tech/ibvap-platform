@@ -23,98 +23,16 @@ IBVAP is a real-time video surveillance system that processes live RTSP camera f
 
 ---
 
-## 🏗️ System Architecture
-
-```mermaid
-graph TB
-    subgraph LOCAL["🏠 Local Network (192.168.29.0/24)"]
-        CAM["📹 RTSP Camera<br/>Hikvision DVR<br/>192.168.29.104:554"]
-        TS_LOCAL["🔗 Tailscale Client<br/>Subnet Router<br/>(Windows PC)"]
-    end
-
-    subgraph CLOUD["☁️ Oracle Cloud Server (132.226.186.119)"]
-        TS_CLOUD["🔗 Tailscale Client<br/>100.66.24.23"]
-        
-        subgraph BACKEND["⚙️ FastAPI Backend (Port 8000)"]
-            RTSP_THREAD["🎬 LiveRTSPStream<br/>Threaded Frame Grabber"]
-            ENGINE["🧠 SurveillanceEngine"]
-            
-            subgraph AI["🤖 AI Pipeline"]
-                YOLO["YOLO11n<br/>(OpenVINO)<br/>Human + Vehicle"]
-                ANPR["ANPR Model<br/>(OpenVINO)<br/>Plate Localization"]
-                OCR["EasyOCR<br/>Text Extraction"]
-            end
-            
-            API_VIDEO["/api/video_feed<br/>MJPEG Stream"]
-            API_WS["/ws/alerts<br/>WebSocket"]
-        end
-        
-        subgraph FRONTEND["🖥️ React Dashboard"]
-            UI["IBVAP Command Center<br/>Live Feed + Alert Panel"]
-        end
-    end
-
-    subgraph BROWSER["🌍 User's Browser"]
-        VIEW["Dashboard View"]
-    end
-
-    CAM -->|"RTSP/TCP"| TS_LOCAL
-    TS_LOCAL -->|"Tailscale VPN Tunnel"| TS_CLOUD
-    TS_CLOUD -->|"RTSP Stream"| RTSP_THREAD
-    RTSP_THREAD -->|"Latest Frame"| ENGINE
-    ENGINE --> YOLO
-    YOLO -->|"Vehicle Crop"| ANPR
-    ANPR -->|"Plate Crop"| OCR
-    ENGINE -->|"Annotated JPEG"| API_VIDEO
-    ENGINE -->|"Alert JSON"| API_WS
-    FRONTEND -->|"Static Files"| VIEW
-    API_VIDEO -->|"MJPEG"| VIEW
-    API_WS -->|"WebSocket"| VIEW
-
-    style LOCAL fill:#1a1a2e,stroke:#e94560,color:#fff
-    style CLOUD fill:#0f3460,stroke:#16213e,color:#fff
-    style AI fill:#533483,stroke:#e94560,color:#fff
-    style BROWSER fill:#1a1a2e,stroke:#0f3460,color:#fff
-```
 
 ---
 
-## 📊 Data Flow Diagram
+## 📊 Data Flow
 
-```mermaid
-sequenceDiagram
-    participant CAM as 📹 RTSP Camera
-    participant GRAB as 🎬 Frame Grabber Thread
-    participant ENGINE as 🧠 AI Engine
-    participant YOLO as 🔍 YOLO11n
-    participant ANPR as 🔢 ANPR Model
-    participant OCR as 📝 EasyOCR
-    participant API as ⚡ FastAPI
-    participant UI as 🖥️ Browser
-
-    loop Every 5ms
-        CAM->>GRAB: Raw H.265 Frame
-        GRAB->>GRAB: Overwrite buffer (discard old)
-    end
-
-    loop Every ~50ms
-        GRAB->>ENGINE: Latest Frame (zero-lag)
-        ENGINE->>YOLO: Resize to 640×640, Inference
-        YOLO-->>ENGINE: Bounding Boxes (Human/Vehicle)
-        
-        alt Vehicle Detected
-            ENGINE->>ANPR: Full frame plate scan
-            ANPR-->>ENGINE: Plate coordinates
-            ENGINE->>OCR: Grayscale plate crop
-            OCR-->>ENGINE: "MP09CD1234"
-            ENGINE->>API: Alert JSON via Queue
-            API->>UI: WebSocket push
-        end
-        
-        ENGINE->>ENGINE: Draw boxes + labels on frame
-        ENGINE->>API: Annotated JPEG frame
-        API->>UI: MJPEG stream chunk
-    end
+```
+Camera (RTSP/TCP) → Frame Grabber Thread (5ms loop) → AI Engine
+    → YOLO11n (detect humans + vehicles) → Draw bounding boxes
+    → ANPR Model (find plates on full frame) → EasyOCR (read text)
+    → FastAPI → MJPEG stream + WebSocket alerts → Browser Dashboard
 ```
 
 ---
@@ -221,16 +139,8 @@ http://localhost:8000
 
 To access your local camera from a remote cloud server:
 
-```mermaid
-graph LR
-    A["📹 Camera<br/>192.168.29.104"] -->|"Local WiFi"| B["💻 Windows PC<br/>Tailscale Subnet Router"]
-    B -->|"Encrypted VPN Tunnel<br/>(WireGuard)"| C["☁️ Cloud Server<br/>Tailscale Client"]
-    C -->|"Serves Dashboard"| D["🌍 Browser<br/>http://100.66.24.23:8000"]
-    
-    style A fill:#e94560,color:#fff
-    style B fill:#533483,color:#fff
-    style C fill:#0f3460,color:#fff
-    style D fill:#16213e,color:#fff
+```
+📹 Camera (192.168.29.104) → 💻 Windows PC (Tailscale Subnet Router) → ☁️ Cloud Server (Tailscale Client) → 🌍 Browser
 ```
 
 1. **Install Tailscale** on both your local PC and cloud server
