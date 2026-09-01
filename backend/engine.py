@@ -56,7 +56,7 @@ class SurveillanceEngine:
         try:
             self.plate_model = YOLO("../anpr_best_openvino_model/")
         except Exception:
-            self.plate_model = YOLO("../anpr_best.pt") # fallback
+            self.plate_model = YOLO("../best.pt") # fallback
             
         print("[INFO] Loading EasyOCR Engine...")
         self.reader = easyocr.Reader(["en"], gpu=False)
@@ -101,9 +101,6 @@ class SurveillanceEngine:
                 tracker="bytetrack.yaml",
             )
             
-            # 2. Plate Localization
-            plate_results = self.plate_model(inference_frame, verbose=False, conf=0.35)
-            
             current_time = time.time()
             human_detected = False
             
@@ -131,6 +128,41 @@ class SurveillanceEngine:
                         cv2.rectangle(annotated_frame, (bx1, by1), (bx2, by2), (255, 0, 0), 2)
                         cv2.putText(annotated_frame, f"Vehicle", (bx1, max(20, by1 - 10)),
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
+                        
+                        # Process Plates on Vehicle Crop
+                        v_y1, v_y2 = max(0, by1), min(orig_h, by2)
+                        v_x1, v_x2 = max(0, bx1), min(orig_w, bx2)
+                        vehicle_crop = frame[v_y1:v_y2, v_x1:v_x2]
+                        if vehicle_crop.size == 0:
+                            continue
+                        
+                        plate_results = self.plate_model(vehicle_crop, verbose=False, conf=0.4)
+                        for p_result in plate_results:
+                            if p_result.boxes is None: continue
+                            for p_box in p_result.boxes:
+                                px1, py1, px2, py2 = p_box.xyxy.cpu().numpy().astype(int)[0]
+                                plate_crop = vehicle_crop[py1:py2, px1:px2]
+                                
+                                if plate_crop.size > 0:
+                                    gray_plate = cv2.cvtColor(plate_crop, cv2.COLOR_BGR2GRAY)
+                                    ocr_results = self.reader.readtext(gray_plate)
+                                    for res in ocr_results:
+                                        clean_txt = res[1].upper().replace(" ", "").replace("-", "")
+                                        if len(clean_txt) >= 6:
+                                            abs_px1 = v_x1 + px1
+                                            abs_py1 = v_y1 + py1
+                                            abs_px2 = v_x1 + px2
+                                            abs_py2 = v_y1 + py2
+                                            cv2.rectangle(annotated_frame, (abs_px1, abs_py1), (abs_px2, abs_py2), (0, 255, 0), 2)
+                                            cv2.putText(annotated_frame, f"Plate: {clean_txt}", (abs_px1, max(20, abs_py1 - 10)),
+                                                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                                            self._emit_alert({
+                                                "type": "plate_detected",
+                                                "message": f"License Plate: {clean_txt}",
+                                                "plate_number": clean_txt,
+                                                "timestamp": time.time()
+                                            })
+                                            break
             
             # Emit human alert max once every 5 seconds to avoid spam
             if human_detected and (current_time - self.last_alert_time) > 5:
@@ -140,37 +172,6 @@ class SurveillanceEngine:
                     "timestamp": current_time
                 })
                 self.last_alert_time = current_time
-                
-            # Process Plates & OCR
-            for p_result in plate_results:
-                if p_result.boxes is None:
-                    continue
-                for p_box in p_result.boxes:
-                    px1 = int(p_box.xyxy[0][0].item() * scale_x)
-                    py1 = int(p_box.xyxy[0][1].item() * scale_y)
-                    px2 = int(p_box.xyxy[0][2].item() * scale_x)
-                    py2 = int(p_box.xyxy[0][3].item() * scale_y)
-                    
-                    plate_crop = frame[max(0, py1):min(orig_h, py2), max(0, px1):min(orig_w, px2)]
-                    
-                    if plate_crop.size > 0:
-                        gray_plate = cv2.cvtColor(plate_crop, cv2.COLOR_BGR2GRAY)
-                        ocr_results = self.reader.readtext(gray_plate)
-                        
-                        for res in ocr_results:
-                            clean_txt = res[1].upper().replace(" ", "").replace("-", "")
-                            if len(clean_txt) >= 4:
-                                cv2.rectangle(annotated_frame, (px1, py1), (px2, py2), (0, 255, 0), 2)
-                                cv2.putText(annotated_frame, f"Plate: {clean_txt}", (px1, max(20, py1 - 10)),
-                                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-                                
-                                self._emit_alert({
-                                    "type": "plate_detected",
-                                    "message": f"License Plate: {clean_txt}",
-                                    "plate_number": clean_txt,
-                                    "timestamp": time.time()
-                                })
-                                break
 
             self.latest_annotated_frame = annotated_frame
             time.sleep(0.01) # Yield
