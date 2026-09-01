@@ -1,0 +1,24 @@
+description: Ultralytics anpr_best model trained on dataset.yaml
+author: Ultralytics
+date: '2026-09-01T01:58:12.424225+05:30'
+version: 8.4.129
+license: AGPL-3.0 License (https://ultralytics.com/license)
+docs: https://docs.ultralytics.com
+stride: 32
+task: detect
+head: Detect
+batch: 1
+imgsz:
+- 640
+- 640
+names:
+  0: '[''plate'']'
+args:
+  data: null
+  batch: 1
+  fraction: 1.0
+  quantize: null
+  dynamic: false
+  nms: false
+channels: 3
+end2end: false
