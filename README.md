@@ -15,10 +15,10 @@
 
 IBVAP is a real-time video surveillance system that processes live RTSP camera feeds using AI to perform:
 
-- ** Human Intrusion Detection** — Detects and tracks humans with bounding boxes and confidence scores
-- ** Vehicle Detection & Tracking** — Identifies cars, trucks, and motorcycles using ByteTrack
-- ** Automatic Number Plate Recognition (ANPR)** — Localizes license plates on vehicles and reads text via OCR
-- ** Real-Time Alerts** — Pushes detection events to a web dashboard via WebSocket in real-time
+-  **Human Intrusion Detection** — Detects and tracks humans with bounding boxes and confidence scores
+-  **Vehicle Detection & Tracking** — Identifies cars, trucks, and motorcycles using ByteTrack
+- **Automatic Number Plate Recognition (ANPR)** — Localizes license plates on vehicles and reads text via OCR
+- **Real-Time Alerts** — Pushes detection events to a web dashboard via WebSocket in real-time
 - **Cloud-Accessible Dashboard** — React-based Command Center accessible from anywhere via Tailscale VPN
 
 ---
@@ -140,7 +140,7 @@ http://localhost:8000
 To access your local camera from a remote cloud server:
 
 ```
-📹 Camera (192.168.29.104) →  Windows PC (Tailscale Subnet Router) →  Cloud Server (Tailscale Client) →  Browser
+ Camera (192.168.29.104) →  Windows PC (Tailscale Subnet Router) →  Cloud Server (Tailscale Client) →  Browser
 ```
 
 1. **Install Tailscale** on both your local PC and cloud server
