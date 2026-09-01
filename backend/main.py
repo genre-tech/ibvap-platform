@@ -1,1 +1,68 @@
-﻿浩潰瑲挠㉶椊灭牯⁴獡湹楣੯浩潰瑲琠浩੥牦浯映獡慴楰椠灭牯⁴慆瑳偁ⱉ圠扥潓正瑥‬敗卢捯敫䑴獩潣湮捥ੴ牦浯映獡慴楰爮獥潰獮獥椠灭牯⁴瑓敲浡湩剧獥潰獮੥牦浯映獡慴楰洮摩汤睥牡⹥潣獲椠灭牯⁴佃卒楍摤敬慷敲昊潲⁭慦瑳灡⹩瑳瑡捩楦敬⁳浩潰瑲匠慴楴䙣汩獥昊潲⁭湥楧敮椠灭牯⁴畓癲楥汬湡散湅楧敮ਊ灡⁰‽慆瑳偁⡉楴汴㵥䤢噂偁䄠䥐⤢ਊ灡⹰摡彤業摤敬慷敲ਨ††佃卒楍摤敬慷敲ਬ††污潬彷牯杩湩㵳≛∪ⱝ †愠汬睯损敲敤瑮慩獬吽畲ⱥ †愠汬睯浟瑥潨獤嬽⨢崢ਬ††污潬彷敨摡牥㵳≛∪ⱝ⤊ਊ‣潆⁲敤潭瀠牵潰敳ⱳ甠楳杮愠瀠扵楬⁣慳灭敬删協⁐牯琠敨甠敳❲⁳潬慣⁬湯੥䅃䕍䅒啟䱒㴠∠瑲灳⼺愯浤湩携睥獡㍀ㄲㅀ㈹ㄮ㠶㈮⸹〱㨴㔵⼴瑓敲浡湩⽧桃湡敮獬ㄯ㄰ਢ湥楧敮㴠匠牵敶汩慬据䕥杮湩⡥䅃䕍䅒啟䱒਩䀊灡⹰湯敟敶瑮∨瑳牡畴≰਩獡湹⁣敤⁦瑳牡畴彰癥湥⡴㨩 †攠杮湩⹥瑳牡⡴਩䀊灡⹰湯敟敶瑮∨桳瑵潤湷⤢愊祳据搠晥猠畨摴睯彮癥湥⡴㨩 †攠杮湩⹥瑳灯⤨ਊ敤⁦敧敮慲整晟慲敭⡳㨩 †眠楨敬吠畲㩥 †††映慲敭㴠攠杮湩⹥慬整瑳慟湮瑯瑡摥晟慲敭 †††椠⁦牦浡⁥獩丠湯㩥 †††††琠浩⹥汳敥⡰⸰⤱ †††††挠湯楴畮੥†††††† †††⌠䔠据摯⁥潴䨠䕐ੇ††††敲ⱴ戠晵敦⁲‽癣⸲浩湥潣敤✨樮杰Ⱗ映慲敭਩††††晩渠瑯爠瑥਺††††††潣瑮湩敵 †††††ਠ††††牦浡彥祢整⁳‽畢晦牥琮扯瑹獥⤨ †††礠敩摬⠠❢ⴭ牦浡履屲❮ †††††††❢潃瑮湥⵴祔数›浩条⽥灪来牜湜牜湜‧‫牦浡彥祢整⁳‫❢牜湜⤧ †††ਠ††††‣摁番瑳映慲敭爠瑡⁥景猠牴慥業杮 †††琠浩⹥汳敥⡰⸰㔰਩ਊ慀灰朮瑥∨愯楰瘯摩潥晟敥≤਩獡湹⁣敤⁦楶敤彯敦摥⤨਺††∢嘢摩潥猠牴慥業杮爠畯整‮畐⁴桴獩椠⁮桴⁥牳⁣瑡牴扩瑵⁥景愠⁮浩⁧慴⹧∢ਢ††敲畴湲匠牴慥業杮敒灳湯敳木湥牥瑡彥牦浡獥⤨‬敭楤彡祴数∽畭瑬灩牡⽴⵸業數ⵤ敲汰捡㭥戠畯摮牡㵹牦浡≥਩䀊灡⹰敷獢捯敫⡴⼢獷愯敬瑲≳਩獡湹⁣敤⁦敷獢捯敫彴污牥獴眨扥潳正瑥›敗卢捯敫⥴਺††睡楡⁴敷獢捯敫⹴捡散瑰⤨ †琠祲਺††††桷汩⁥牔敵਺††††††‣慗瑩映牯渠睥愠敬瑲⁳牦浯琠敨攠杮湩੥††††††污牥⁴‽睡楡⁴湥楧敮愮敬瑲煟敵敵朮瑥⤨ †††††愠慷瑩眠扥潳正瑥献湥彤獪湯愨敬瑲਩††硥散瑰圠扥潓正瑥楄捳湯敮瑣਺††††牰湩⡴䌢楬湥⁴楤捳湯敮瑣摥映潲⁭污牥獴圠扥潓正瑥∮਩app.mount("/", StaticFiles(directory="../frontend/dist", html=True), name="static")
+import cv2
+import asyncio
+import time
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
+from engine import SurveillanceEngine
+
+app = FastAPI(title="IBVAP API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# For demo purposes, using a public sample RTSP or the user's local one
+CAMERA_URL = "rtsp://admin:dewas@321@192.168.29.104:554/Streaming/Channels/101"
+engine = SurveillanceEngine(CAMERA_URL)
+
+@app.on_event("startup")
+async def startup_event():
+    engine.start()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    engine.stop()
+
+def generate_frames():
+    while True:
+        frame = engine.latest_annotated_frame
+        if frame is None:
+            time.sleep(0.1)
+            continue
+            
+        # Encode to JPEG
+        ret, buffer = cv2.imencode('.jpg', frame)
+        if not ret:
+            continue
+            
+        frame_bytes = buffer.tobytes()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+        
+        # Adjust frame rate of streaming
+        time.sleep(0.05)
+
+
+@app.get("/api/video_feed")
+async def video_feed():
+    """Video streaming route. Put this in the src attribute of an img tag."""
+    return StreamingResponse(generate_frames(), media_type="multipart/x-mixed-replace; boundary=frame")
+
+@app.websocket("/ws/alerts")
+async def websocket_alerts(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            # Wait for new alerts from the engine
+            alert = await engine.alert_queue.get()
+            await websocket.send_json(alert)
+    except WebSocketDisconnect:
+        print("Client disconnected from alerts WebSocket.")
+
+from fastapi.staticfiles import StaticFiles
+app.mount('/', StaticFiles(directory='../frontend/dist', html=True), name='static')
