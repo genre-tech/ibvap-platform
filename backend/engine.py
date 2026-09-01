@@ -8,6 +8,35 @@ from ultralytics import YOLO
 
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp"
 
+class LiveRTSPStream:
+    def __init__(self, rtsp_url):
+        self.cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
+        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        self.frame = None
+        self.ret = False
+        self.running = True
+
+        self.thread = threading.Thread(target=self._update, daemon=True)
+        self.thread.start()
+
+    def _update(self):
+        while self.running:
+            if self.cap.isOpened():
+                ret, img = self.cap.read()
+                if ret:
+                    self.ret = ret
+                    self.frame = img
+                else:
+                    self.ret = False
+            time.sleep(0.005)
+
+    def read(self):
+        return self.ret, self.frame
+
+    def stop(self):
+        self.running = False
+        self.cap.release()
+
 class SurveillanceEngine:
     def __init__(self, rtsp_url):
         self.rtsp_url = rtsp_url
@@ -15,6 +44,7 @@ class SurveillanceEngine:
         self.latest_frame = None
         self.latest_annotated_frame = None
         self.alert_queue = asyncio.Queue()  # For websockets
+        self.stream = None
         
         # Load models
         print("[INFO] Loading OpenVINO-optimized Models...")
@@ -44,17 +74,11 @@ class SurveillanceEngine:
         self.running = False
 
     def _run_pipeline(self):
-        cap = cv2.VideoCapture(self.rtsp_url, cv2.CAP_FFMPEG)
-        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        self.stream = LiveRTSPStream(self.rtsp_url)
+        time.sleep(2)
         
         while self.running:
-            if not cap.isOpened():
-                time.sleep(1)
-                cap = cv2.VideoCapture(self.rtsp_url, cv2.CAP_FFMPEG)
-                cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-                continue
-                
-            ret, frame = cap.read()
+            ret, frame = self.stream.read()
             if not ret or frame is None:
                 time.sleep(0.01)
                 continue
@@ -151,7 +175,8 @@ class SurveillanceEngine:
             self.latest_annotated_frame = annotated_frame
             time.sleep(0.01) # Yield
             
-        cap.release()
+        if self.stream:
+            self.stream.stop()
         
     def _emit_alert(self, alert_data):
         try:
