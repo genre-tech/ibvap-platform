@@ -140,13 +140,13 @@ http://localhost:8000
 To access your local camera from a remote cloud server:
 
 ```
- Camera (192.168.29.104) →  Windows PC (Tailscale Subnet Router) →  Cloud Server (Tailscale Client) →  Browser
+ Camera  →  Windows PC (Tailscale Subnet Router) →  Cloud Server (Tailscale Client) →  Browser
 ```
 
 1. **Install Tailscale** on both your local PC and cloud server
 2. **Enable Subnet Routing** on the local PC:
    ```bash
-   tailscale up --advertise-routes=192.168.29.0/24
+   tailscale up --advertise-routes=ip/24
    ```
 3. **Approve the route** in the [Tailscale Admin Console](https://login.tailscale.com/admin/machines)
 4. **SSH into cloud server** and start the backend:
