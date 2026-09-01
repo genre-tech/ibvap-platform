@@ -7,7 +7,8 @@ function App() {
 
   useEffect(() => {
     // Connect to WebSocket for real-time alerts
-    const ws = new WebSocket('ws://localhost:8000/ws/alerts')
+    const wsUrl = window.location.protocol === 'https:' ? `wss://${window.location.host}/ws/alerts` : `ws://${window.location.host}/ws/alerts`;
+    const ws = new WebSocket(wsUrl)
     
     ws.onopen = () => {
       setIsConnected(true)
@@ -41,7 +42,7 @@ function App() {
           <h2>Live Surveillance Feed</h2>
           <div className="video-wrapper">
             <img 
-              src="http://localhost:8000/api/video_feed" 
+              src="/api/video_feed" 
               alt="Live RTSP Feed" 
               onError={(e) => { e.target.onerror = null; e.target.src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='640' height='480'><rect width='100%' height='100%' fill='%23333'/><text x='50%' y='50%' font-size='20' fill='white' text-anchor='middle'>Stream Offline</text></svg>" }}
             />
