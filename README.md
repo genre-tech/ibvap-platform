@@ -11,22 +11,22 @@
 
 ---
 
-## 🎯 What is IBVAP?
+##  What is IBVAP?
 
 IBVAP is a real-time video surveillance system that processes live RTSP camera feeds using AI to perform:
 
-- **🚶 Human Intrusion Detection** — Detects and tracks humans with bounding boxes and confidence scores
-- **🚗 Vehicle Detection & Tracking** — Identifies cars, trucks, and motorcycles using ByteTrack
-- **🔢 Automatic Number Plate Recognition (ANPR)** — Localizes license plates on vehicles and reads text via OCR
-- **⚡ Real-Time Alerts** — Pushes detection events to a web dashboard via WebSocket in real-time
-- **🌐 Cloud-Accessible Dashboard** — React-based Command Center accessible from anywhere via Tailscale VPN
+- ** Human Intrusion Detection** — Detects and tracks humans with bounding boxes and confidence scores
+- ** Vehicle Detection & Tracking** — Identifies cars, trucks, and motorcycles using ByteTrack
+- ** Automatic Number Plate Recognition (ANPR)** — Localizes license plates on vehicles and reads text via OCR
+- ** Real-Time Alerts** — Pushes detection events to a web dashboard via WebSocket in real-time
+- **Cloud-Accessible Dashboard** — React-based Command Center accessible from anywhere via Tailscale VPN
 
 ---
 
 
 ---
 
-## 📊 Data Flow
+##  Data Flow
 
 ```
 Camera (RTSP/TCP) → Frame Grabber Thread (5ms loop) → AI Engine
@@ -37,7 +37,7 @@ Camera (RTSP/TCP) → Frame Grabber Thread (5ms loop) → AI Engine
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 sih-survillance/
@@ -74,7 +74,7 @@ sih-survillance/
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Prerequisites
 
@@ -140,7 +140,7 @@ http://localhost:8000
 To access your local camera from a remote cloud server:
 
 ```
-📹 Camera (192.168.29.104) → 💻 Windows PC (Tailscale Subnet Router) → ☁️ Cloud Server (Tailscale Client) → 🌍 Browser
+📹 Camera (192.168.29.104) →  Windows PC (Tailscale Subnet Router) →  Cloud Server (Tailscale Client) →  Browser
 ```
 
 1. **Install Tailscale** on both your local PC and cloud server
@@ -176,7 +176,7 @@ ps aux | grep uvicorn
 
 ---
 
-## 🧠 AI Models
+##  AI Models
 
 | Model | Purpose | Format | Size | Classes |
 |-------|---------|--------|------|---------|
@@ -198,7 +198,7 @@ Frame → YOLO11n (detect humans + vehicles) → Draw boxes
 
 ---
 
-## 🔧 Key Technical Decisions
+##  Key Technical Decisions
 
 ### Why a Dedicated Frame Grabber Thread?
 
@@ -251,7 +251,7 @@ The camera sits behind a home router with no public IP. Tailscale creates a secu
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -263,7 +263,7 @@ The camera sits behind a home router with no public IP. Tailscale creates a secu
 
 ---
 
-## 📜 License
+##  License
 
 This project uses YOLO models under the [AGPL-3.0 License](https://www.gnu.org/licenses/agpl-3.0.html).
 
