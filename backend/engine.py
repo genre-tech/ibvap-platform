@@ -2,7 +2,7 @@ import os
 import threading
 import time
 import cv2
-import easyocr
+from paddleocr import PaddleOCR
 import asyncio
 import queue
 from ultralytics import YOLO
@@ -51,8 +51,8 @@ class SurveillanceEngine:
             print(f"[WARN] OpenVINO ANPR model failed: {e}, falling back to best.pt")
             self.plate_model = YOLO(plate_pt)
             
-        print("[INFO] Loading EasyOCR Engine...")
-        self.reader = easyocr.Reader(["en"], gpu=False)
+        print("[INFO] Loading PaddleOCR Engine...")
+        self.reader = PaddleOCR(use_textline_orientation=False, lang='en', device='cpu', enable_mkldnn=False)
         print("[INFO] All models loaded successfully!")
         
         self.SURVEILLANCE_CLASSES = [0, 2, 3, 7] # Person, Car, Motorcycle, Truck
@@ -229,16 +229,16 @@ class SurveillanceEngine:
 
             try:
                 if plate_crop is not None and getattr(plate_crop, "size", 0) > 0:
-                    gray_plate = cv2.cvtColor(plate_crop, cv2.COLOR_BGR2GRAY)
-                    ocr_results = self.reader.readtext(gray_plate, allowlist="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+                    ocr_results = list(self.reader.predict(plate_crop))
                     
                     plate_text = ""
-                    for res in ocr_results:
-                        clean_txt = res[1].upper().replace(" ", "").replace("-", "")
-                        
-                        if len(clean_txt) >= 4:
-                            plate_text = clean_txt
-                            break
+                    if ocr_results:
+                        for text in ocr_results[0].get('rec_texts', []):
+                            clean_txt = text.upper().replace(" ", "").replace("-", "")
+                            
+                            if len(clean_txt) >= 4:
+                                plate_text = clean_txt
+                                break
                     
                     if plate_text:
                         # Reject false positives (like watermarks) that contain no numbers
