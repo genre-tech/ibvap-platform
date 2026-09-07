@@ -110,7 +110,43 @@ class SurveillanceEngine:
                 t.join(timeout=1.0)
 
     def _ingestion_worker(self):
-        pass
+        print(f"[INFO] Ingestion Worker connecting to {self.rtsp_url}...")
+        cap = cv2.VideoCapture(self.rtsp_url)
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        
+        try:
+            while self.running:
+                if not cap.isOpened():
+                    time.sleep(1)
+                    try:
+                        cap.release()
+                    except Exception:
+                        pass
+                    cap = cv2.VideoCapture(self.rtsp_url)
+                    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+                    continue
+                    
+                try:
+                    ret, frame = cap.read()
+                    if not ret or frame is None:
+                        time.sleep(0.01)
+                        continue
+                        
+                    # Drop oldest frame if queue is full
+                    if self.frame_queue.full():
+                        try:
+                            self.frame_queue.get_nowait()
+                        except queue.Empty:
+                            pass
+                            
+                    self.frame_queue.put(frame)
+                    time.sleep(0.005)
+                except Exception as e:
+                    print(f"[ERROR] Ingestion Worker error reading frame: {e}")
+                    time.sleep(0.01)
+        finally:
+            cap.release()
+
 
     def _inference_worker(self):
         pass
