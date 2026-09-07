@@ -250,13 +250,17 @@ class SurveillanceEngine:
                             break
                     
                     if plate_text:
-                        print(f"[ANPR] Plate detected: {plate_text}")
-                        self._emit_alert({
-                            "type": "plate_detected",
-                            "message": f"License Plate: {plate_text}",
-                            "plate_number": plate_text,
-                            "timestamp": time.time()
-                        })
+                        # Reject false positives (like watermarks) that contain no numbers
+                        has_number = any(char.isdigit() for char in plate_text)
+                        
+                        if has_number:
+                            print(f"[ANPR] Plate detected: {plate_text}")
+                            self._emit_alert({
+                                "type": "plate_detected",
+                                "message": f"License Plate: {plate_text}",
+                                "plate_number": plate_text,
+                                "timestamp": time.time()
+                            })
             except Exception as e:
                 print(f"[ERROR] OCR Worker error processing plate: {e}")
 
