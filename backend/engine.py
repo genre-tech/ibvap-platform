@@ -116,7 +116,33 @@ class SurveillanceEngine:
         pass
 
     def _ocr_worker(self):
-        pass
+        print("[INFO] OCR Worker started.")
+        while self.running:
+            try:
+                # Wait for plate with timeout to allow checking self.running
+                px1, py1, px2, py2, plate_crop = self.ocr_queue.get(timeout=1.0)
+            except queue.Empty:
+                continue
+
+            if plate_crop.size > 0:
+                gray_plate = cv2.cvtColor(plate_crop, cv2.COLOR_BGR2GRAY)
+                ocr_results = self.reader.readtext(gray_plate)
+                
+                plate_text = ""
+                for res in ocr_results:
+                    clean_txt = res[1].upper().replace(" ", "").replace("-", "")
+                    if len(clean_txt) >= 4:
+                        plate_text = clean_txt
+                        break
+                
+                if plate_text:
+                    print(f"[ANPR] Plate detected: {plate_text}")
+                    self._emit_alert({
+                        "type": "plate_detected",
+                        "message": f"License Plate: {plate_text}",
+                        "plate_number": plate_text,
+                        "timestamp": time.time()
+                    })
 
     def _run_pipeline(self):
         self.stream = LiveRTSPStream(self.rtsp_url)
