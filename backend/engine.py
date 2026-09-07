@@ -124,25 +124,28 @@ class SurveillanceEngine:
             except queue.Empty:
                 continue
 
-            if plate_crop.size > 0:
-                gray_plate = cv2.cvtColor(plate_crop, cv2.COLOR_BGR2GRAY)
-                ocr_results = self.reader.readtext(gray_plate)
-                
-                plate_text = ""
-                for res in ocr_results:
-                    clean_txt = res[1].upper().replace(" ", "").replace("-", "")
-                    if len(clean_txt) >= 4:
-                        plate_text = clean_txt
-                        break
-                
-                if plate_text:
-                    print(f"[ANPR] Plate detected: {plate_text}")
-                    self._emit_alert({
-                        "type": "plate_detected",
-                        "message": f"License Plate: {plate_text}",
-                        "plate_number": plate_text,
-                        "timestamp": time.time()
-                    })
+            try:
+                if plate_crop is not None and getattr(plate_crop, "size", 0) > 0:
+                    gray_plate = cv2.cvtColor(plate_crop, cv2.COLOR_BGR2GRAY)
+                    ocr_results = self.reader.readtext(gray_plate)
+                    
+                    plate_text = ""
+                    for res in ocr_results:
+                        clean_txt = res[1].upper().replace(" ", "").replace("-", "")
+                        if len(clean_txt) >= 4:
+                            plate_text = clean_txt
+                            break
+                    
+                    if plate_text:
+                        print(f"[ANPR] Plate detected: {plate_text}")
+                        self._emit_alert({
+                            "type": "plate_detected",
+                            "message": f"License Plate: {plate_text}",
+                            "plate_number": plate_text,
+                            "timestamp": time.time()
+                        })
+            except Exception as e:
+                print(f"[ERROR] OCR Worker error processing plate: {e}")
 
     def _run_pipeline(self):
         self.stream = LiveRTSPStream(self.rtsp_url)

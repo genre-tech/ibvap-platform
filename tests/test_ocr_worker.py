@@ -27,7 +27,18 @@ async def test_ocr():
         time.sleep(0.1)
     assert engine.ocr_queue.empty(), "OCR worker did not consume item from ocr_queue"
 
-    # 2. Push an image with readable license plate text to verify alert emission
+    # 2. Push corrupted plate crop (e.g., 1D array) that causes cv2.cvtColor to fail
+    # Worker must catch exception, log error, and remain alive
+    corrupted_plate = np.array([1, 2, 3], dtype=np.uint8)
+    engine.ocr_queue.put((0, 0, 10, 10, corrupted_plate))
+    for _ in range(30):
+        if engine.ocr_queue.empty():
+            break
+        time.sleep(0.1)
+    assert engine.ocr_queue.empty(), "OCR worker did not consume corrupted plate"
+    assert t.is_alive(), "OCR worker thread crashed on corrupted plate"
+
+    # 3. Push an image with readable license plate text to verify alert emission after error
     plate_img = np.ones((100, 300, 3), dtype=np.uint8) * 255
     cv2.putText(plate_img, "MH12DE1433", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 0, 0), 2)
     engine.ocr_queue.put((0, 0, 300, 100, plate_img))
