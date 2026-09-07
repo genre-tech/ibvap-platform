@@ -18,8 +18,15 @@ def test_inference():
     t = threading.Thread(target=engine._inference_worker, daemon=True)
     t.start()
     
-    time.sleep(3)
-    assert engine.latest_annotated_frame is not None
+    # Poll with timeout for queue consumption/frame update
+    timeout = 10.0
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        if engine.latest_annotated_frame is not None:
+            break
+        time.sleep(0.1)
+        
+    assert engine.latest_annotated_frame is not None, "Timeout waiting for latest_annotated_frame"
     engine.running = False
     print("Inference test passed.")
 

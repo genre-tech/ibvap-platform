@@ -180,7 +180,7 @@ class SurveillanceEngine:
                     if p_result.boxes is None: continue
                     for p_box in p_result.boxes:
                         px1, py1, px2, py2 = p_box.xyxy.cpu().numpy().astype(int)[0]
-                        plate_crop = frame[max(0, py1):min(orig_h, py2), max(0, px1):min(orig_w, px2)]
+                        plate_crop = frame[max(0, py1):min(orig_h, py2), max(0, px1):min(orig_w, px2)].copy()
                         
                         if plate_crop.size > 0:
                             # Draw green box immediately
