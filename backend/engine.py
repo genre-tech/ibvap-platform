@@ -91,6 +91,7 @@ class SurveillanceEngine:
         self.frame_count = 0
         self.frame_queue = queue.Queue(maxsize=2)
         self.ocr_queue = queue.Queue(maxsize=50)
+        self.max_read_failures = 50
         self.threads = []
 
     def start(self):
@@ -113,10 +114,14 @@ class SurveillanceEngine:
         print(f"[INFO] Ingestion Worker connecting to {self.rtsp_url}...")
         cap = cv2.VideoCapture(self.rtsp_url)
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        consecutive_failures = 0
+        max_failures = getattr(self, "max_read_failures", 50)
         
         try:
             while self.running:
-                if not cap.isOpened():
+                if not cap.isOpened() or consecutive_failures >= max_failures:
+                    if consecutive_failures >= max_failures:
+                        print(f"[WARN] Ingestion Worker lost stream from {self.rtsp_url} (failed {consecutive_failures} consecutive reads). Reconnecting...")
                     time.sleep(1)
                     try:
                         cap.release()
@@ -124,13 +129,17 @@ class SurveillanceEngine:
                         pass
                     cap = cv2.VideoCapture(self.rtsp_url)
                     cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+                    consecutive_failures = 0
                     continue
                     
                 try:
                     ret, frame = cap.read()
                     if not ret or frame is None:
+                        consecutive_failures += 1
                         time.sleep(0.01)
                         continue
+                        
+                    consecutive_failures = 0
                         
                     # Drop oldest frame if queue is full
                     if self.frame_queue.full():
@@ -142,6 +151,7 @@ class SurveillanceEngine:
                     self.frame_queue.put(frame)
                     time.sleep(0.005)
                 except Exception as e:
+                    consecutive_failures += 1
                     print(f"[ERROR] Ingestion Worker error reading frame: {e}")
                     time.sleep(0.01)
         finally:

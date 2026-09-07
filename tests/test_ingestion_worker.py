@@ -31,7 +31,7 @@ def test_ingestion():
         tmp = tempfile.NamedTemporaryFile(suffix=".mp4", delete=False)
         test_video_path = tmp.name
         tmp.close()
-        create_dummy_video(test_video_path, num_frames=60)
+        create_dummy_video(test_video_path, num_frames=200)
         source = test_video_path
 
     try:
@@ -80,6 +80,61 @@ def test_ingestion_unreachable_source_shutdown():
     assert not t.is_alive(), "Worker did not stop cleanly when shutting down from unreachable source"
     print("Unreachable source shutdown test passed.")
 
+def test_ingestion_midstream_reconnect():
+    # Simulate mid-stream network drop where isOpened() stays True but read() fails
+    class MockVideoCapture:
+        instances = []
+        def __init__(self, url):
+            self.url = url
+            self.frame_num = 0
+            self._opened = True
+            self.released = False
+            MockVideoCapture.instances.append(self)
+
+        def set(self, prop, val):
+            pass
+
+        def isOpened(self):
+            # In OpenCV, isOpened stays True even after network disconnect
+            return self._opened
+
+        def read(self):
+            self.frame_num += 1
+            # Produce 3 valid frames, then simulate mid-stream disconnect
+            if self.frame_num <= 3:
+                return True, np.full((240, 320, 3), 100, dtype=np.uint8)
+            return False, None
+
+        def release(self):
+            self._opened = False
+            self.released = True
+
+    orig_vc = cv2.VideoCapture
+    cv2.VideoCapture = MockVideoCapture
+    MockVideoCapture.instances.clear()
+
+    try:
+        engine = SurveillanceEngine("mock_rtsp_stream")
+        engine.max_read_failures = 5  # Quick failure threshold for test
+        engine.running = True
+
+        t = threading.Thread(target=engine._ingestion_worker, daemon=True)
+        t.start()
+
+        # Allow worker to read 3 frames, encounter 5 failures, and reconnect
+        time.sleep(1.5)
+
+        assert len(MockVideoCapture.instances) >= 2, "Ingestion worker did not reconnect after mid-stream failures"
+        assert MockVideoCapture.instances[0].released, "Stale VideoCapture was not released before reconnecting"
+
+        engine.running = False
+        t.join(timeout=2.0)
+        assert not t.is_alive(), "Ingestion worker thread did not stop cleanly after reconnect"
+        print("Mid-stream reconnection test passed.")
+    finally:
+        cv2.VideoCapture = orig_vc
+
 if __name__ == "__main__":
     test_ingestion()
     test_ingestion_unreachable_source_shutdown()
+    test_ingestion_midstream_reconnect()
