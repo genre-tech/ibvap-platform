@@ -230,33 +230,12 @@ class SurveillanceEngine:
             try:
                 if plate_crop is not None and getattr(plate_crop, "size", 0) > 0:
                     gray_plate = cv2.cvtColor(plate_crop, cv2.COLOR_BGR2GRAY)
-                    ocr_results = self.reader.readtext(gray_plate)
+                    ocr_results = self.reader.readtext(gray_plate, allowlist="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
                     
                     plate_text = ""
                     for res in ocr_results:
                         clean_txt = res[1].upper().replace(" ", "").replace("-", "")
                         
-                        # Apply format-aware heuristic correction for Indian plates (9 or 10 chars)
-                        if len(clean_txt) in [9, 10]:
-                            letter_to_number = {'O': '0', 'U': '0', 'D': '0', 'Q': '0', 'I': '1', 'L': '1', 'Z': '2', 'S': '5', 'B': '8', 'G': '6', 'A': '4'}
-                            number_to_letter = {'0': 'O', '1': 'I', '2': 'Z', '5': 'S', '8': 'B', '6': 'G', '4': 'A'}
-                            corrected = list(clean_txt)
-                            
-                            # Pos 1-2: Letters
-                            for i in range(2):
-                                if corrected[i] in number_to_letter: corrected[i] = number_to_letter[corrected[i]]
-                            # Pos 3-4: Numbers
-                            for i in range(2, 4):
-                                if corrected[i] in letter_to_number: corrected[i] = letter_to_number[corrected[i]]
-                            # Last 4: Numbers
-                            for i in range(len(clean_txt)-4, len(clean_txt)):
-                                if corrected[i] in letter_to_number: corrected[i] = letter_to_number[corrected[i]]
-                            # Middle (1-2 chars): Letters
-                            for i in range(4, len(clean_txt)-4):
-                                if corrected[i] in number_to_letter: corrected[i] = number_to_letter[corrected[i]]
-                                
-                            clean_txt = "".join(corrected)
-
                         if len(clean_txt) >= 4:
                             plate_text = clean_txt
                             break
