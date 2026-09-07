@@ -14,10 +14,8 @@ class SurveillanceEngine:
     def __init__(self, rtsp_url):
         self.rtsp_url = rtsp_url
         self.running = False
-        self.latest_frame = None
         self.latest_annotated_frame = None
         self.alert_queue = asyncio.Queue()  # For websockets
-        self.stream = None
         
         # Load models
         base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -69,9 +67,9 @@ class SurveillanceEngine:
     def start(self):
         self.running = True
         self.threads = [
-            threading.Thread(target=self._ingestion_worker, daemon=True),
-            threading.Thread(target=self._inference_worker, daemon=True),
-            threading.Thread(target=self._ocr_worker, daemon=True)
+            threading.Thread(target=self._ingestion_worker, name="IngestionWorker", daemon=True),
+            threading.Thread(target=self._inference_worker, name="InferenceWorker", daemon=True),
+            threading.Thread(target=self._ocr_worker, name="OCRWorker", daemon=True)
         ]
         for t in self.threads:
             t.start()
@@ -95,6 +93,8 @@ class SurveillanceEngine:
                     if consecutive_failures >= max_failures:
                         print(f"[WARN] Ingestion Worker lost stream from {self.rtsp_url} (failed {consecutive_failures} consecutive reads). Reconnecting...")
                     time.sleep(1)
+                    if not self.running:
+                        break
                     try:
                         cap.release()
                     except Exception:
@@ -120,7 +120,10 @@ class SurveillanceEngine:
                         except queue.Empty:
                             pass
                             
-                    self.frame_queue.put(frame)
+                    try:
+                        self.frame_queue.put_nowait(frame)
+                    except queue.Full:
+                        pass
                     time.sleep(0.005)
                 except Exception as e:
                     consecutive_failures += 1
@@ -208,7 +211,7 @@ class SurveillanceEngine:
         while self.running:
             try:
                 # Wait for plate with timeout to allow checking self.running
-                px1, py1, px2, py2, plate_crop = self.ocr_queue.get(timeout=1.0)
+                _px1, _py1, _px2, _py2, plate_crop = self.ocr_queue.get(timeout=1.0)
             except queue.Empty:
                 continue
 
