@@ -4,6 +4,7 @@ import time
 import cv2
 import easyocr
 import asyncio
+import queue
 from ultralytics import YOLO
 
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp"
@@ -47,21 +48,38 @@ class SurveillanceEngine:
         self.stream = None
         
         # Load models
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.abspath(os.path.join(base_dir, ".."))
+
+        base_model_dir = os.path.join(project_root, "yolo11n_openvino_model")
+        if not os.path.exists(base_model_dir):
+            base_model_dir = "../yolo11n_openvino_model/"
+        base_pt = os.path.join(project_root, "yolo11n.pt")
+        if not os.path.exists(base_pt):
+            base_pt = "../yolo11n.pt"
+
+        plate_model_dir = os.path.join(project_root, "anpr_best_openvino_model")
+        if not os.path.exists(plate_model_dir):
+            plate_model_dir = "../anpr_best_openvino_model/"
+        plate_pt = os.path.join(project_root, "best.pt")
+        if not os.path.exists(plate_pt):
+            plate_pt = "../best.pt"
+
         print("[INFO] Loading Base YOLO Model...")
         try:
-            self.base_model = YOLO("../yolo11n_openvino_model/")
+            self.base_model = YOLO(base_model_dir)
             print("[INFO] Base model loaded (OpenVINO)")
         except Exception as e:
             print(f"[WARN] OpenVINO base model failed: {e}, falling back to .pt")
-            self.base_model = YOLO("../yolo11n.pt")
+            self.base_model = YOLO(base_pt)
             
         print("[INFO] Loading ANPR Plate Model...")
         try:
-            self.plate_model = YOLO("../anpr_best_openvino_model/")
+            self.plate_model = YOLO(plate_model_dir)
             print("[INFO] ANPR model loaded (OpenVINO)")
         except Exception as e:
             print(f"[WARN] OpenVINO ANPR model failed: {e}, falling back to best.pt")
-            self.plate_model = YOLO("../best.pt")
+            self.plate_model = YOLO(plate_pt)
             
         print("[INFO] Loading EasyOCR Engine...")
         self.reader = easyocr.Reader(["en"], gpu=False)
@@ -71,14 +89,34 @@ class SurveillanceEngine:
         self.VEHICLE_CLASSES = [2, 3, 7]
         self.last_alert_time = 0
         self.frame_count = 0
+        self.frame_queue = queue.Queue(maxsize=2)
+        self.ocr_queue = queue.Queue(maxsize=50)
+        self.threads = []
 
     def start(self):
         self.running = True
-        self.thread = threading.Thread(target=self._run_pipeline, daemon=True)
-        self.thread.start()
+        self.threads = [
+            threading.Thread(target=self._ingestion_worker, daemon=True),
+            threading.Thread(target=self._inference_worker, daemon=True),
+            threading.Thread(target=self._ocr_worker, daemon=True)
+        ]
+        for t in self.threads:
+            t.start()
 
     def stop(self):
         self.running = False
+        for t in self.threads:
+            if t.is_alive():
+                t.join(timeout=1.0)
+
+    def _ingestion_worker(self):
+        pass
+
+    def _inference_worker(self):
+        pass
+
+    def _ocr_worker(self):
+        pass
 
     def _run_pipeline(self):
         self.stream = LiveRTSPStream(self.rtsp_url)
