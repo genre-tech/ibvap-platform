@@ -5,3 +5,13 @@ kernel.errors.txt
 .venv/
 venv/
 
+# Debug artifacts
+backend/debug_crops/
+scratch/
+
+# One-off scripts
+update_engine.py
+backend/get-pip.py
+
+# Agent-generated planning docs
+docs/superpowers/
