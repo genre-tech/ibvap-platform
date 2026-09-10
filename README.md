@@ -31,7 +31,7 @@ IBVAP is a real-time video surveillance system that processes live RTSP camera f
 ```
 Camera (RTSP/TCP) → Frame Grabber Thread (5ms loop) → AI Engine
     → YOLO11n (detect humans + vehicles) → Draw bounding boxes
-    → ANPR Model (find plates on full frame) → EasyOCR (read text)
+    → ANPR Model (find plates on full frame) → PaddleOCR (read text via OCR worker thread)
     → FastAPI → MJPEG stream + WebSocket alerts → Browser Dashboard
 ```
 
@@ -43,7 +43,7 @@ Camera (RTSP/TCP) → Frame Grabber Thread (5ms loop) → AI Engine
 sih-survillance/
 ├── backend/
 │   ├── main.py              # FastAPI server — video streaming, WebSocket alerts, static file serving
-│   ├── engine.py            # Core AI pipeline — LiveRTSPStream, SurveillanceEngine, ANPR logic
+│   ├── engine.py            # Core AI pipeline — SurveillanceEngine, ANPR logic, PaddleOCR worker
 │   └── venv/                # Python virtual environment (server-side)
 │
 ├── frontend/
@@ -98,7 +98,7 @@ python -m venv venv
 source venv/bin/activate        # Linux/Mac
 # venv\Scripts\activate         # Windows
 
-pip install fastapi uvicorn websockets opencv-python ultralytics easyocr aiofiles openvino
+pip install fastapi uvicorn websockets opencv-python ultralytics paddleocr aiofiles openvino
 ```
 
 ### 3. Configure Camera URL
@@ -182,7 +182,7 @@ ps aux | grep uvicorn
 |-------|---------|--------|------|---------|
 | `yolo11n` | General object detection | OpenVINO / .pt | ~5.6 MB | Person, Car, Motorcycle, Truck |
 | `best` (ANPR) | License plate localization | OpenVINO / .pt | ~6.2 MB | Plate |
-| EasyOCR | Optical character recognition | Neural Network | Runtime | Alphanumeric text |
+| PaddleOCR v3 | Optical character recognition | PaddlePaddle | Runtime | Alphanumeric text |
 
 ### Detection Pipeline
 
@@ -191,7 +191,7 @@ Frame → YOLO11n (detect humans + vehicles) → Draw boxes
                                            ↓
                               ANPR Model (find plates on full frame)
                                            ↓
-                              EasyOCR (read plate text from crop)
+                              PaddleOCR (read plate text via dedicated OCR worker thread)
                                            ↓
                               Emit alert via WebSocket
 ```
@@ -204,7 +204,7 @@ Frame → YOLO11n (detect humans + vehicles) → Draw boxes
 
 RTSP cameras using H.265 (HEVC) encode video using keyframes (I-frames) and delta frames (P-frames). If OpenCV's internal buffer fills up because the AI inference loop is too slow, the decoder starts dropping I-frames. When a P-frame arrives without its reference keyframe, the video **smears and tears**.
 
-The `LiveRTSPStream` class solves this by running `cap.read()` in a tight background loop (every 5ms), constantly discarding old frames. The AI engine always reads the most recent frame with zero buffer lag.
+The frame grabber thread solves this by running `cap.read()` in a tight background loop (every 5ms), constantly discarding old frames. The AI engine always reads the most recent frame with zero buffer lag.
 
 ### Why OpenVINO?
 
@@ -255,7 +255,7 @@ The camera sits behind a home router with no public IP. Tailscale creates a secu
 
 | Layer | Technology |
 |-------|-----------|
-| **AI / CV** | Ultralytics YOLO11, OpenVINO, EasyOCR, OpenCV |
+| **AI / CV** | Ultralytics YOLO11, OpenVINO, PaddleOCR, OpenCV |
 | **Backend** | Python, FastAPI, Uvicorn, WebSockets |
 | **Frontend** | React 18, Vite, CSS3 |
 | **Networking** | Tailscale (WireGuard VPN), RTSP/TCP |

@@ -2,6 +2,7 @@ fastapi
 uvicorn
 opencv-python
 ultralytics
-easyocr
+paddlepaddle
+paddleocr
 asyncio
 websockets
